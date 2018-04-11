@@ -164,7 +164,7 @@ int dist, sum=0;
  
  // correct for tilt
    imu::Vector<3> gravity = bno.getVector(Adafruit_BNO055::VECTOR_GRAVITY);
-  avg = -avg * gravity.z / 9.8032
+  avg = -avg * gravity.z() / 9.8032
   return(avg);
 }
 
