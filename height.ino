@@ -40,7 +40,6 @@ int swi=7;
 int THpin=5;
 double Kp=1,Ki=1,Kd=1;
 
-
 //Define Variables we'll be connecting to
 double Setpoint, Input, Output;
 
