@@ -12,6 +12,17 @@
 #include <Wire.h>
 #include <LIDARLite.h>
 
+//IMU libraries
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
+
+/* Set the delay between fresh samples */
+#define BNO055_SAMPLERATE_DELAY_MS (100)
+Adafruit_BNO055 bno = Adafruit_BNO055();
+
+
+imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_GRAVITY);
 
 LIDARLite lidarLite;
 int cal_cnt = 0;
@@ -46,7 +57,18 @@ void setup() {
   pinMode(THpin,INPUT);
   lidarLite.begin(0, true);
   lidarLite.configure(0);
-    
+  
+ 
+  //initialize IMU
+  if(!bno.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+   delay(1000);
+ 
+  bno.setExtCrystalUse(true);
 
   //turn the PID on
   myPID.SetMode(AUTOMATIC);
@@ -97,7 +119,21 @@ Serial.println(SIG);
         myPID.Compute();
         PWM = huv_throtle - Output;
       }
-  }    
+  } 
+ 
+   /* Display calibration status for each sensor. */
+  uint8_t system, gyro, accel, mag = 0;
+  bno.getCalibration(&system, &gyro, &accel, &mag);
+  Serial.print("CALIBRATION: Sys=");
+  Serial.print(system, DEC);
+  Serial.print(" Gyro=");
+  Serial.print(gyro, DEC);
+  Serial.print(" Accel=");
+  Serial.print(accel, DEC);
+  Serial.print(" Mag=");
+  Serial.println(mag, DEC);
+
+  delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
 float getheight()
@@ -126,6 +162,10 @@ int dist, sum=0;
   sum = sum + a[l];
   }
   avg = sum/5;
+ 
+ // correct for tilt
+   imu::Vector<3> gravity = bno.getVector(Adafruit_BNO055::VECTOR_GRAVITY);
+  avg = avg * gravity.z / 9.8032
   return(avg);
 }
 
